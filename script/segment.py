@@ -32,7 +32,7 @@ def main(args):
             image = cv2.cvtColor(cv2.imread(image_path), cv2.COLOR_BGR2RGB)
             output_dir = args.output_dir / args.dataset_path.stem / mode / "intermediate_results" / image_path.stem
             output_dir.mkdir(parents=True, exist_ok=True)
-            cv2.imwrite((output_dir / "original_image.png").as_posix(), image)
+            cv2.imwrite((output_dir / "original_image.png").as_posix(), cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
 
             seg_images, mask_images, seg_map = mask_processor(image, mask_generator, output_dir)
 
