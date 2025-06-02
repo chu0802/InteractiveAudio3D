@@ -1,0 +1,41 @@
+import argparse
+from segment_anything import SamAutomaticMaskGenerator, sam_model_registry
+from src.sam.mask_processor import mask_processor
+import cv2
+from pathlib import Path
+from tqdm import tqdm
+
+def arg_parse():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dataset_path', type=Path, required=True)
+    parser.add_argument('--sam_ckpt_path', type=str, default="../langsplat/ckpts/sam_vit_h_4b8939.pth")
+    parser.add_argument('--device', type=str, default="cuda")
+    parser.add_argument("--output_dir", type=Path, default="output")
+    
+    return parser.parse_args()
+
+def main(args):
+    sam = sam_model_registry["vit_h"](checkpoint=args.sam_ckpt_path).to(args.device)
+    mask_generator = SamAutomaticMaskGenerator(
+        model=sam,
+        points_per_side=32,
+        pred_iou_thresh=0.7,
+        box_nms_thresh=0.7,
+        stability_score_thresh=0.85,
+        min_mask_region_area=100,
+    )
+
+    for mode in ["train", "test"]:
+        image_dir = args.dataset_path / mode / "ours_30000" / "renders"
+
+        for image_path in tqdm(sorted(image_dir.iterdir()), desc=f"Processing {mode} images"):
+            image = cv2.cvtColor(cv2.imread(image_path), cv2.COLOR_BGR2RGB)
+            output_dir = args.output_dir / args.dataset_path.stem / mode / "intermediate_results" / image_path.stem
+            output_dir.mkdir(parents=True, exist_ok=True)
+            cv2.imwrite((output_dir / "original_image.png").as_posix(), image)
+
+            seg_images, mask_images, seg_map = mask_processor(image, mask_generator, output_dir)
+
+if __name__ == '__main__':
+    args = arg_parse()
+    main(args)
