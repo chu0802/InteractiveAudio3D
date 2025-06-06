@@ -1,11 +1,18 @@
 .gemini.sh
 data/
 output/
-
+assets/
+detailed_assets/
+.checkpoints/
+video_output/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+*.json
+*.sh
+examples/
+t.py
 
 # C extensions
 *.so
