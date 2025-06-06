@@ -2,13 +2,14 @@ import argparse
 from pathlib import Path
 from src.gptwrapper import GPTWrapper
 from pathlib import Path
-from src.gptwrapper.response import ObjectRecognitionResponse, InteractionResponse
+from src.gptwrapper.response import ObjectRecognitionResponse, InteractionResponse, DetailedObjectRecognitionResponse
 from src.gptwrapper.config.system_prompt import RECOGNITION_SYSTEM_PROMPT, INTERACTION_SYSTEM_PROMPT
 import json
 
 RECOGNITION_PROMPT = "What is the name of the object in the image? Show me the precise name of the object"
-
+DETAILED_RECOGNITION_PROMPT = "What is the name of the object in the image? Show me the precise name of the object and its corresponding material"
 INTERACTION_PROMPT = "show me 5 different interactions to interact with {object_name} that can produce unique and interesting sounds. If the object is a static object, the format should be action + object_name. e.g., opening the door. If the object can produce sound by itself, the format should be object_name + action, e.g., dog barking"
+DETAILED_INTERACTION_PROMPT = "show me 5 different interactions to interact with {material} {object_name} that can produce unique and interesting sounds. Be aware of the material of the object. If the object is a static object, the format should be action + object_name. e.g., opening the door. If the object can produce sound by itself, the format should be object_name + action, e.g., dog barking"
 
 def main(args):
     gpt = GPTWrapper(model_name="gemini-2.5-flash-preview-05-20")
@@ -21,22 +22,23 @@ def main(args):
             image=img,
             text=RECOGNITION_PROMPT,
             system_message=RECOGNITION_SYSTEM_PROMPT,
-            response_format=ObjectRecognitionResponse,
+            response_format=DetailedObjectRecognitionResponse,
         )
 
         interaction_res = gpt.ask(
-            text=INTERACTION_PROMPT.format(object_name=response.name),
+            text=DETAILED_INTERACTION_PROMPT.format(object_name=response.object_name, material=response.material),
             system_message=INTERACTION_SYSTEM_PROMPT,
             response_format=InteractionResponse,
         )
 
         results[img.name] = {
             "image_path": img.as_posix(),
-            "object_name": response.name,
+            "object_name": response.object_name,
+            "material": response.material,
             "interactions": interaction_res.to_list(),
         }
 
-        with (img_dir.parent / "results.json").open("w") as f:
+        with (img_dir.parent / "detailed_results.json").open("w") as f:
             json.dump(results, f, indent=4)
         
 
