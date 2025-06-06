@@ -11,32 +11,48 @@ from openai import OpenAI
 
 def encode_image(image_path):
     with open(image_path, "rb") as image_file:
-        return base64.b64encode(image_file.read())
+        return base64.b64encode(image_file.read()).decode("utf-8")
 
-
+def encode_audio(audio_path):
+    with open(audio_path, "rb") as audio_file:
+        return base64.b64encode(audio_file.read()).decode("utf-8")
 
 @dataclass
 class BaseContent:
     text: Optional[str] = None
     image: Optional[str | Path] = None
+    audio: Optional[str | Path] = None
 
     def to_dict(self):
-        if self.text is None and self.image is None:
-            raise ValueError("Either text or image should be provided")
-        type = "text" if self.text else "image_url"
+        if self.text is None and self.image is None and self.audio is None:
+            raise ValueError("Either text or image or audio should be provided")
+        type = "text" if self.text else ("image_url" if self.image else "input_audio")
 
         if isinstance(self.image, Path):
             self.image = self.image.as_posix()
 
         if isinstance(self.image, str):
-            self.image = encode_image(self.image).decode("utf-8")
+            self.image = encode_image(self.image)
+        
+        if isinstance(self.audio, Path):
+            self.audio = self.audio.as_posix()
+        
+        if isinstance(self.audio, str):
+            self.audio = encode_audio(self.audio)
 
         content = (
             self.text
-            if type == "text" 
-            else {
-                "url": f"data:image/jpeg;base64,{self.image}",
-            }
+            if type == "text"
+            else (
+                {
+                    "url": f"data:image/jpeg;base64,{self.image}"
+                }
+                if type == "image_url"
+                else {
+                    "data": self.audio,
+                    "format": "wav"
+                }
+            )
         )
         return {"type": type, type: content}
 
@@ -50,12 +66,15 @@ class PromptMessages:
     def messages(self):
         return self._messages
 
-    def add_message(self, role="user", image: Optional[str | Path] = None, text: Optional[str] = None):
+    def add_message(self, role="user", image: Optional[str | Path] = None, text: Optional[str] = None, audio: Optional[str | Path] = None):
         contents = []
         if image:
             contents.append(BaseContent(image=image))
+        if audio:
+            contents.append(BaseContent(audio=audio))
         if text:
             contents.append(BaseContent(text=text))
+
         self._add_message(role, contents)
 
     def _add_message(self, role: str, content: Union[BaseContent, List[BaseContent]]):
@@ -143,11 +162,12 @@ class GPTWrapper:
         self, 
         image: Optional[str | Path] = None, 
         text: Optional[str] = None, 
+        audio: Optional[str | Path] = None,
         system_message: Optional[str] = None,
         response_format: Any = GeneralResponse,
     ):
         msgs = PromptMessages(system_message)
-        msgs.add_message(image=image, text=text)
+        msgs.add_message(image=image, text=text, audio=audio)
         result = self.client.beta.chat.completions.parse(
             messages=msgs.messages, 
             response_format=response_format, 
