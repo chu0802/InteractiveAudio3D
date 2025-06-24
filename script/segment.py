@@ -10,7 +10,10 @@ def arg_parse():
     parser.add_argument('--dataset_path', type=Path, required=True)
     parser.add_argument('--sam_ckpt_path', type=str, default="../langsplat/ckpts/sam_vit_h_4b8939.pth")
     parser.add_argument('--device', type=str, default="cuda")
-    parser.add_argument("--output_dir", type=Path, default="output")
+    parser.add_argument("--output_dir", type=Path, default="assets")
+    parser.add_argument("--mode", type=str, choices=["train", "test"], default="train")
+    parser.add_argument("--image_id", type=int, default=0)
+    parser.add_argument("--rim_size", type=int, default=10)
     
     return parser.parse_args()
 
@@ -25,16 +28,21 @@ def main(args):
         min_mask_region_area=100,
     )
 
-    for mode in ["train", "test"]:
-        image_dir = args.dataset_path / mode / "ours_30000" / "renders"
+    image_path = args.dataset_path / args.mode / "ours_30000" / "renders" / f"{args.image_id:05d}.png"
+    
+    image = cv2.cvtColor(cv2.imread(image_path), cv2.COLOR_BGR2RGB)
+    output_dir = args.output_dir / args.dataset_path.stem
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-        for image_path in tqdm(sorted(image_dir.iterdir()), desc=f"Processing {mode} images"):
-            image = cv2.cvtColor(cv2.imread(image_path), cv2.COLOR_BGR2RGB)
-            output_dir = args.output_dir / args.dataset_path.stem / mode / "intermediate_results" / image_path.stem
-            output_dir.mkdir(parents=True, exist_ok=True)
-            cv2.imwrite((output_dir / "original_image.png").as_posix(), cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
+    seg_images, mask_images, seg_map = mask_processor(image, mask_generator, output_dir, rim_size=args.rim_size)
 
-            seg_images, mask_images, seg_map = mask_processor(image, mask_generator, output_dir)
+    # for image_path in tqdm(sorted(image_dir.iterdir()), desc=f"Processing {args.mode} images"):
+    #     image = cv2.cvtColor(cv2.imread(image_path), cv2.COLOR_BGR2RGB)
+    #     output_dir = args.output_dir / args.dataset_path.stem / args.mode / "intermediate_results" / image_path.stem
+    #     output_dir.mkdir(parents=True, exist_ok=True)
+    #     cv2.imwrite((output_dir / "original_image.png").as_posix(), cv2.cvtColor(image, cv2.COLOR_RGB2BGR))
+
+    #     seg_images, mask_images, seg_map = mask_processor(image, mask_generator, output_dir)
 
 if __name__ == '__main__':
     args = arg_parse()

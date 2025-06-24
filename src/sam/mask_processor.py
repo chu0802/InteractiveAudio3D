@@ -4,14 +4,20 @@ import torch
 from torchvision.transforms import ToTensor, Resize
 from torchvision.utils import save_image
 
-def get_seg_img(mask, image):
+def get_seg_img(mask, image, rim_size=0):
     image = image.copy()
     mask_image = image.copy()
     # here I remove the masking operation.
     mask_image[mask['segmentation']==0] = np.array([0, 0,  0], dtype=np.uint8)
     x,y,w,h = np.int32(mask['bbox'])
-    seg_img = image[y:y+h, x:x+w, ...]
-    mask_img = mask_image[y:y+h, x:x+w, ...]
+
+    x_min = max(0, x - rim_size)
+    x_max = min(image.shape[1], x + w + rim_size)
+    y_min = max(0, y - rim_size)
+    y_max = min(image.shape[0], y + h + rim_size)
+
+    seg_img = image[y_min:y_max, x_min:x_max, ...]
+    mask_img = mask_image[y_min:y_max, x_min:x_max, ...]
     mask = mask_img.copy().sum(axis=2)
     mask[mask != 0] = 255
     return seg_img, mask_img, mask
@@ -118,14 +124,14 @@ def masks_update(masks_lvl, **kwargs):
     masks_lvl = filter(keep_mask_nms, masks_lvl)
     return masks_lvl
 
-def mask2segmap(masks, image, padding=True):
+def mask2segmap(masks, image, padding=True, rim_size=10):
     seg_img_list = []
     mask_img_list = []
     mask_map_list = []
     seg_map = -np.ones(image.shape[:2], dtype=np.int32)
     for i in range(len(masks)):
         mask = masks[i]
-        seg_img, mask_image, mask_map = get_seg_img(mask, image)
+        seg_img, mask_image, mask_map = get_seg_img(mask, image, rim_size=rim_size)
         if padding:
             seg_img = Resize(224)(ToTensor()(pad_img(seg_img)))
             mask_img = Resize(224)(ToTensor()(pad_img(mask_image)))
@@ -144,22 +150,27 @@ def mask2segmap(masks, image, padding=True):
     mask_maps = torch.stack(mask_map_list, axis=0).to("cuda")
     return seg_imgs, mask_imgs, mask_maps, seg_map
 
-def mask_processor(image, mask_generator, save_folder=None):
+def mask_processor(image, mask_generator, save_folder=None, rim_size=10):
     masks = mask_generator.generate(image)
     masks = masks_update(masks, iou_thr=0.8, score_thr=0.7, inner_thr=0.5)
     
-    seg_images, mask_images, mask_maps, seg_map = mask2segmap(masks, image)
+    seg_images, mask_images, mask_maps, seg_map = mask2segmap(masks, image, rim_size=rim_size)
     
     if save_folder is not None:
-        (save_folder / "seg_img").mkdir(parents=True, exist_ok=True)
-        (save_folder / "mask_img").mkdir(parents=True, exist_ok=True)
-        (save_folder / "mask").mkdir(parents=True, exist_ok=True)
+        seg_folder = f"seg_img_{rim_size}" if rim_size > 0 else "seg_img"
+        (save_folder / seg_folder).mkdir(parents=True, exist_ok=True)
         for i, seg_img in enumerate(seg_images):
-            save_image(seg_img, save_folder / "seg_img" / f"{i:03d}.png")
+            save_image(seg_img, save_folder / seg_folder / f"{i:03d}.png")
+        
+        mask_folder = f"mask_img_{rim_size}" if rim_size > 0 else "mask_img"
+        (save_folder / mask_folder).mkdir(parents=True, exist_ok=True)
         for i, mask_img in enumerate(mask_images):
-            save_image(mask_img, save_folder / "mask_img" / f"{i:03d}.png")
+            save_image(mask_img, save_folder / mask_folder / f"{i:03d}.png")
+        
+        mask_folder = f"mask_{rim_size}" if rim_size > 0 else "mask"
+        (save_folder / mask_folder).mkdir(parents=True, exist_ok=True)
         for i, mask_map in enumerate(mask_maps):
-            save_image(mask_map, save_folder / "mask" / f"{i:03d}.png")
+            save_image(mask_map, save_folder / mask_folder / f"{i:03d}.png")
 
     seg_map = np.tile(seg_map, (4, 1, 1))
     
