@@ -1,4 +1,5 @@
 from .object_recognition import ObjectRecognitionResponse, DetailedObjectRecognitionResponse
 from .general import GeneralResponse
-from .interaction import InteractionResponse
-from .audio_understanding import AudioUnderstandingResponse, AudioRankingResponse
+from .interaction import InteractionResponse, RecognitionInteractionResponse
+from .audio_understanding import AudioUnderstandingResponse, AudioRankingResponse, AudioUnderstandingCandidateResponse
+from .image_decomposition import ImageDecompositionResponse, AudioVerificationResponse, ImageUnderstandingResponse

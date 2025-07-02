@@ -1,6 +1,11 @@
 from pydantic import BaseModel
 from typing import List
 
+class RecognitionInteractionResponse(BaseModel):
+    object_name: str
+    properties: List[str]
+    interactions: List[str]
+
 class InteractionResponse(BaseModel):
     interaction_1: str
     interaction_2: str

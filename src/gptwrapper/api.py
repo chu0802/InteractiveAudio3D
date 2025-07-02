@@ -165,6 +165,7 @@ class GPTWrapper:
         audio: Optional[str | Path] = None,
         system_message: Optional[str] = None,
         response_format: Any = GeneralResponse,
+        return_full_response: bool = False,
     ):
         msgs = PromptMessages(system_message)
         msgs.add_message(image=image, text=text, audio=audio)
@@ -174,4 +175,7 @@ class GPTWrapper:
             **self.params,
         )
         self.add_cost(result)
-        return result.choices[0].message.parsed
+        if return_full_response:
+            return result
+        else:
+            return result.choices[0].message.parsed
