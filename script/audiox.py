@@ -13,8 +13,8 @@ import argparse
 import numpy as np
 
 
-MODEL_CONFIG_PATH = "/home/chu980802/langsplat/audio_model/audiox/config.json"
-MODEL_CKPT_PATH = "/work/chu980802/audiox/model/model.ckpt"
+MODEL_CONFIG_PATH = "/mnt/data/audiosplat/model/audiox_config.json"
+MODEL_CKPT_PATH = "/mnt/data/audiosplat/model/audiox_model.ckpt"
 
 class AudioXWrapper:
     def __init__(self, seed=1102, device="cuda"):
