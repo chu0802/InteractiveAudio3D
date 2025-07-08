@@ -164,18 +164,29 @@ class GPTWrapper:
         text: Optional[str] = None, 
         audio: Optional[str | Path] = None,
         system_message: Optional[str] = None,
-        response_format: Any = GeneralResponse,
+        response_format: Any = None,
         return_full_response: bool = False,
     ):
         msgs = PromptMessages(system_message)
         msgs.add_message(image=image, text=text, audio=audio)
-        result = self.client.beta.chat.completions.parse(
-            messages=msgs.messages, 
-            response_format=response_format, 
-            **self.params,
-        )
+
+        if response_format:
+            result = self.client.beta.chat.completions.parse(
+                messages=msgs.messages, 
+                response_format=response_format, 
+                **self.params,
+            )
+        else:
+            result = self.client.chat.completions.create(
+                messages=msgs.messages, 
+                **self.params,
+            )
+
         self.add_cost(result)
         if return_full_response:
             return result
         else:
-            return result.choices[0].message.parsed
+            if response_format:
+                return result.choices[0].message.parsed
+            else:
+                return result.choices[0].message.content

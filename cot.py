@@ -4,7 +4,7 @@ from src.gptwrapper.response import GeneralResponse
 import argparse
 
 if __name__ == "__main__":
-    audio_path = "/home/chuyu/vllab/interactive_audio_3d/output/0118_bathroom/000/dropping_Dial_hand_soap/1105.wav"
+    audio_path = "/home/chuyu/vllab/interactive_audio_3d/output/0118_bathroom/000/dropping_Dial_hand_soap/1102.wav"
     
     naive_text_prompt = "Given an audio recording of a sound, determine the likely cause by identifying the action that produced it, the object involved, and the object's possible materials and physical characteristics. Provide multiple possible actions, the object, and its likely materials using the following JSON structure: ```json{{action: [action1 (only the action, no other words), action2, action3, ...], object: [object1, ...], material: [material1, ...], likelihood: x/10}}```"
 
@@ -15,38 +15,34 @@ if __name__ == "__main__":
     
     audio_verification_prompt = "Given the provided audio and the checklist: {checklist}, verify if the audio perfectly and preciously simulate the sound of {interaction_prompt} and reflect the object's properties. Answering yes/no for each item in the checklist, finally provide a brief justification of your answer."
 
-    check_list_prompt = "List a checklist to check if an provided audio perfectly and preciously simulate the sound of {interaction_prompt} and reflect the object's properties."
-    # checklist = "1. Does the audio include the primary impact sound of a metal can hitting a surface? 2. Does the audio perfectly and preciously simulate the sound of knocking a metal can onto a wooden table and reflect the object's properties?"
 
-    interaction_prompt = "knocking a metal can onto a wooden table"
-    gpt = GPTWrapper(model_name="gemini-2.5-flash")
+    cot = False
+    seed = 1102
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-m", "--model", type=str, default="qwen")
+    args = parser.parse_args()
     
-    check_list = gpt.ask(text=check_list_prompt.format(interaction_prompt=interaction_prompt)).response
-    print(check_list)
-    res = gpt.ask(audio=audio_path, text=audio_verification_prompt.format(checklist=check_list, interaction_prompt=interaction_prompt)).response
-    # cot = True
-    # seed = 1102
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument("-m", "--model", type=str, default="qwen")
-    # args = parser.parse_args()
-    
-    # if args.model == "qwen":
-    #     qwen = QwenAPI()
-    #     if not cot:
-    #         res = qwen.ask(audio_path=audio_path, text=naive_text_prompt, is_json=True)
-    #     else:
-    #         thinking_res = qwen.ask(audio_path=audio_path, text=thinking_text, is_json=False, seed=seed)
-    #         print(thinking_res)
-    #         res = qwen.ask(audio_path=audio_path, text=cot_stage_2_prompt.format(thinking_res=thinking_res), is_json=True, seed=seed)
+    if args.model == "qwen":
+        qwen = QwenAPI()
+        if not cot:
+            res = qwen.ask(audio_path=audio_path, text=naive_text_prompt, is_json=True)
+        else:
+            thinking_res = qwen.ask(audio_path=audio_path, text=thinking_text, is_json=False, seed=seed)
+            print(thinking_res)
+            res = qwen.ask(audio_path=audio_path, text=cot_stage_2_prompt.format(thinking_res=thinking_res), is_json=True, seed=seed)
         
-    # elif args.model == "gemini":
-    #     gpt = GPTWrapper(model_name="gemini-2.5-flash")
-    #     if not cot:
-    #         res = gpt.ask(audio=audio_path, text=naive_text_prompt, response_format=GeneralResponse).response
-    #     else:
-    #         thinking_res = gpt.ask(audio=audio_path, text=thinking_text, response_format=GeneralResponse).response
-    #         print(thinking_res)
-    #         res = gpt.ask(audio=audio_path, text=cot_stage_2_prompt.format(thinking_res=thinking_res), response_format=GeneralResponse).response
+    elif args.model == "gemini" or args.model == "openai":
+        if "gemini" in args.model:
+            gpt = GPTWrapper(model_name="gemini-2.5-flash")
+        else:
+            gpt = GPTWrapper(model_name="gpt-4o-audio-preview")
+
+        if not cot:
+            res = gpt.ask(audio=audio_path, text=naive_text_prompt)
+        else:
+            thinking_res = gpt.ask(audio=audio_path, text=thinking_text)
+            print(thinking_res)
+            res = gpt.ask(audio=audio_path, text=cot_stage_2_prompt.format(thinking_res=thinking_res))
     
     print("-" * 20)
     print(res)
