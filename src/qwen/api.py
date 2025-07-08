@@ -2,8 +2,6 @@ import os
 import base64
 import json
 from openai import OpenAI
-from src.gptwrapper.response import AudioUnderstandingCandidateResponse
-
 
 def base64_encode(path):
     with open(path, "rb") as file:
@@ -38,13 +36,15 @@ class QwenAPI:
     def parse_json_response(self, response):
         return parse_json_response(response)
     
-    def ask(self, audio_path=None, image_path=None, text=None, is_json=True):
-        messages = compose_messages(audio_path=audio_path, image_path=image_path, text=text)
+    def ask(self, messages=None, audio_path=None, image_path=None, text=None, is_json=True, **kwargs):
+        if messages is None:
+            messages = compose_messages(audio_path=audio_path, image_path=image_path, text=text)
         completion = self.client.chat.completions.create(
             model=self.model,
             messages=messages,
             modalities=["text"],
             stream=True,
+            **kwargs,
         )
         res = self.get_text_response(completion)
 
@@ -53,7 +53,7 @@ class QwenAPI:
         else:
             return res
 
-def compose_messages(audio_path=None, image_path=None, text=None):
+def compose_messages(audio_path=None, image_path=None, text=None, role="user"):
     if (audio_path is None and image_path is None and text is None):
         raise ValueError("At least one of audio_path, image_path, or text must be provided")
     
@@ -91,15 +91,44 @@ def compose_messages(audio_path=None, image_path=None, text=None):
 
     messages = [
         {
-            "role": "user",
+            "role": role,
             "content": contents,
         }
     ]
     return messages
 
 if __name__ == "__main__":
-    audio_path = "/home/chuyu/vllab/interactive_audio_3d/output/0118_bathroom/000/squeezing_Dial_hand_soap/1103.wav"
-    text = "Given an audio clip of a sound, identify what kind of action likely caused the sound, the object involved, and infer the object's possible materials and physical properties. List several potential actions, the object involved, and the object’s likely material and physical properties in the following json format: ```json{\"action\": [\"action1\", \"action2\", \"action3\", ...], \"object\": [\"object1\", ...], \"material\": [\"material1\", ...], \"physical_properties\": [\"physical_property1\", ...]}```"
+    audio_path = "/home/chuyu/vllab/interactive_audio_3d/output/0118_bathroom/000/dropping_Dial_hand_soap/1106.wav"
+    
+    naive_text_prompt = "Given an audio clip of a sound, identify what kind of action likely caused the sound, the object involved, and infer the object's possible materials and physical properties. List several potential actions, the object involved, and the object’s likely material and physical properties in the following json format: ```json{\"action\": [\"action1\", \"action2\", \"action3\", ...], \"object\": [\"object1\", ...], \"material\": [\"material1\", ...], \"physical_properties\": [\"physical_property1\", ...]}```"
 
+    wait_prompt = "Wait, Let's re-evaluate the audio and the thinking process."
+    
+    thinking_text = "Given an audio clip of a sound, identify what kind of action likely caused the sound, the object involved, and infer the object's possible materials and physical properties. Let's think about it step by step."
+
+    naive = False
+    wait = True
     qwen = QwenAPI()
-    print(qwen.ask(audio_path=audio_path, text=text, is_json=True))
+    
+    if naive:
+        res = qwen.ask(audio_path=audio_path, text=naive_text_prompt, is_json=True)
+    else:
+        thinking_res = qwen.ask(audio_path=audio_path, text=thinking_text, is_json=False)
+
+        print(thinking_res)
+        
+        if wait:
+            thinking_messages = compose_messages(audio_path=audio_path, text=thinking_text, role="user")
+            thinking_response = compose_messages(text=thinking_res, role="assistant")
+            wait_messages = compose_messages(audio_path=audio_path, text=wait_prompt, role="user")
+            
+            final_messages = thinking_messages + thinking_response + wait_messages
+            
+            wait_res = qwen.ask(messages=final_messages, is_json=False)
+            print(wait_res)
+            thinking_res = wait_res
+
+        format = "Given the thinking process: {thinking_res}, list several potential actions, the object involved, and the object’s likely material and physical properties in the following json format: ```json{{action: [action1, action2, action3, ...], object: [object1, ...], material: [material1, ...], physical_properties: [physical_property1, ...]}}```"
+        
+        res = qwen.ask(audio_path=audio_path, text=format.format(thinking_res=thinking_res), is_json=True)
+    print(res)
