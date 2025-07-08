@@ -1,12 +1,12 @@
 import torch
 import torchaudio
 from einops import rearrange
-from src.stable_audio_tools.inference.generation import generate_diffusion_cond
-from src.stable_audio_tools.data.utils import read_video, merge_video_audio
-from src.stable_audio_tools.data.utils import load_and_process_audio
+from src.audiox.inference.generation import generate_diffusion_cond
+from src.audiox.data.utils import read_video, merge_video_audio
+from src.audiox.data.utils import load_and_process_audio
 
-from src.stable_audio_tools.models.factory import create_model_from_config
-from src.stable_audio_tools.models.utils import load_ckpt_state_dict
+from src.audiox.models.factory import create_model_from_config
+from src.audiox.models.utils import load_ckpt_state_dict
 import json
 from pathlib import Path
 import argparse

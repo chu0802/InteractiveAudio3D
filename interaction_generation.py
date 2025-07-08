@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 from script.audio_verifier import verify_audio
 from src.gptwrapper import GPTWrapper
-from src.gptwrapper.response import ImageDecompositionResponse, AudioVerificationResponse, GeneralResponse, RecognitionInteractionResponse, AudioUnderstandingCandidateResponse, ImageUnderstandingResponse
+from src.gptwrapper.response import RecognitionInteractionResponse, ImageUnderstandingResponse
 from script.stable_audio import generate_audio
 from diffusers import StableAudioPipeline
 import soundfile as sf
