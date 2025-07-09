@@ -1,0 +1,11 @@
+{
+    "dataset_type": "audio_dir",
+    "datasets": [
+        {
+            "id": "drop",
+            "path": "/home/chuyu/vllab/interactive_audio_3d/output/picking_up_and_then_dropping_a_plastic_bottle_cap_onto_a_hard_surface_such_as_a_countertop_or_table.",
+            "custom_metadata_module": "/home/chuyu/vllab/interactive_audio_3d/src/stable_audio/custom_metadata.py"
+        }
+    ],
+    "random_crop": true
+}
