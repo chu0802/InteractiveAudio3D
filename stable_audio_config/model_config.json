@@ -144,7 +144,7 @@
             }
         },
         "demo": {
-            "demo_every": 2000,
+            "demo_every": 50,
             "demo_steps": 100,
             "num_demos": 1,
             "demo_cond": [
@@ -166,7 +166,6 @@
         "alpha": 16,
         "dropout": 0,
         "module_dropout": 0,
-        "lr": 2e-4,
-        "weight_decompose": true
+        "lr": 2e-4
     }
 }

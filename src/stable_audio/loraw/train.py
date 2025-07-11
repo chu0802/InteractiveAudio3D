@@ -3,6 +3,8 @@ import json
 import os
 import torch
 import pytorch_lightning as pl
+from pytorch_lightning.callbacks import ModelCheckpoint
+from pytorch_lightning.loggers import WandbLogger
 import random
 
 from stable_audio_tools.models.pretrained import get_pretrained_model
@@ -11,8 +13,8 @@ from stable_audio_tools.data.dataset import create_dataloader_from_config
 from stable_audio_tools.models.utils import load_ckpt_state_dict, remove_weight_norm_from_model
 from stable_audio_tools.training import create_training_wrapper_from_config, create_demo_callback_from_config
 
-from .loraw.network import create_lora_from_config
-from .loraw.callbacks import LoRAModelCheckpoint, ReLoRAModelCheckpoint
+from .network import create_lora_from_config
+from .callbacks import LoRAModelCheckpoint, ReLoRAModelCheckpoint
 
 
 class ExceptionCallback(pl.Callback):
@@ -77,7 +79,7 @@ def main():
         lora = create_lora_from_config(model_config, model)
         if args.lora_ckpt_path:
             lora.load_weights(
-                torch.load(args.lora_ckpt_path, map_location="cpu")["state_dict"]
+                torch.load(args.lora_ckpt_path, map_location="cpu")
             )
         lora.activate()
 
@@ -87,7 +89,7 @@ def main():
     if args.use_lora == 'true':
         lora.prepare_for_training(training_wrapper)
 
-    wandb_logger = pl.loggers.WandbLogger(project=args.name)
+    wandb_logger = WandbLogger(project=args.name)
     wandb_logger.watch(training_wrapper)
 
     callbacks = []
@@ -106,7 +108,7 @@ def main():
         else:
             callbacks.append(ReLoRAModelCheckpoint(lora=lora, every_n_train_steps=args.relora_every, dirpath=checkpoint_dir, save_top_k=-1, checkpoint_every_n_updates=args.checkpoint_every // args.relora_every))
     else:  
-        callbacks.append(pl.callbacks.ModelCheckpoint(every_n_train_steps=args.checkpoint_every, dirpath=checkpoint_dir, save_top_k=-1))
+        callbacks.append(ModelCheckpoint(every_n_train_steps=args.checkpoint_every, dirpath=checkpoint_dir, save_top_k=-1))
 
     callbacks.append(ModelConfigEmbedderCallback(model_config))
 
@@ -129,13 +131,12 @@ def main():
         accumulate_grad_batches=args.accum_batches, 
         callbacks=callbacks,
         logger=wandb_logger,
-        log_every_n_steps=1,
-        max_epochs=2000,
+        log_every_n_steps=10,
+        max_epochs=10,
         default_root_dir=args.save_dir,
         gradient_clip_val=args.gradient_clip_val,
         reload_dataloaders_every_n_epochs = 0,
     )
-
     trainer.fit(training_wrapper, train_dl, ckpt_path=args.ckpt_path if args.ckpt_path else None)
 
 if __name__ == '__main__':
