@@ -166,6 +166,7 @@ class GPTWrapper:
         system_message: Optional[str] = None,
         response_format: Any = None,
         return_full_response: bool = False,
+        parse_json: bool = False,
     ):
         msgs = PromptMessages(system_message)
         msgs.add_message(image=image, text=text, audio=audio)
@@ -188,5 +189,12 @@ class GPTWrapper:
         else:
             if response_format:
                 return result.choices[0].message.parsed
+            elif parse_json and "```json" in result.choices[0].message.content:
+                content = result.choices[0].message.content.split("```json")[1].split("```")[0].strip()
+                content.replace("'", '"')
+                try:
+                    return json.loads(content)
+                except json.JSONDecodeError:
+                    return content
             else:
                 return result.choices[0].message.content
