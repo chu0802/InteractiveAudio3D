@@ -1,19 +1,22 @@
 import argparse
+import json
 from pathlib import Path
 from stable_audio_tools.models.pretrained import get_pretrained_model
 from stable_audio_tools.inference.generation import generate_diffusion_cond
+from stable_audio_tools.models.factory import create_model_from_config
+from .loraw.network import create_lora_from_config, LoRAMerger
 
 import torch
 import torchaudio
 
 from einops import rearrange
 
-
+@torch.no_grad()
 def generate(
     model,
     model_config,
     prompt,
-    negative_prompt="Low quality.",
+    negative_prompt="Low quality, inconsistent, blurry, jittery, distorted",
     seconds_total=5,
     cfg_scale=7.0,
     steps=100,
@@ -65,11 +68,28 @@ def generate(
     }
     audio = generate_diffusion_cond(**generate_args)
     audio = audio[:,:,:int(seconds_total*sample_rate)]
-    audio = rearrange(audio, "b d n -> d (b n)")
+    # audio = rearrange(audio, "b d n -> d (b n)")
     audio = audio.to(torch.float32).div(torch.max(torch.abs(audio))).clamp(-1, 1).mul(32767).to(torch.int16).cpu()    
 
     return audio
 
+def load_model(model_config_path=None, lora_ckpt_path=None, device="cuda"):
+    
+    model, model_config = get_pretrained_model("stabilityai/stable-audio-open-1.0")
+    
+    if model_config_path is not None:
+        with open(model_config_path, "r") as f:
+            model_config = json.load(f)
+
+    if lora_ckpt_path is not None:
+        lora = create_lora_from_config(model_config, model)
+        lora.load_weights(
+            torch.load(lora_ckpt_path, map_location="cpu")
+        )
+        lora.activate()
+    model.to(device).eval().requires_grad_(False).to(torch.float16)
+    
+    return model, model_config
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -77,27 +97,27 @@ def parse_args():
     parser.add_argument("-o", "--output_dir", type=Path, default=Path("output"))
     parser.add_argument("-s", "--seed", type=int, default=1102)
     parser.add_argument("-n", "--num_samples", type=int, default=1)
+    parser.add_argument("-m", "--model_config", type=Path, default=None)
+    parser.add_argument("-l", "--lora_ckpt_path", type=Path, default=None)
     return parser.parse_args()
 
 def main(args):
-    model, model_config = get_pretrained_model("stabilityai/stable-audio-open-1.0")
-    model.to("cuda").eval().requires_grad_(False)
-    model.to(torch.float16)
+    model, model_config = load_model(args.model_config, args.lora_ckpt_path)
 
+    audio = generate(
+        model,
+        model_config,
+        steps=100,
+        prompt=args.prompt,
+        seconds_total=5,
+        seed=args.seed,
+        batch_size=args.num_samples,
+        device="cuda"
+    )
     for i in range(args.num_samples):
-        seed = args.seed + i
-        audio = generate(
-            model,
-            model_config,
-            prompt=args.prompt,
-            seconds_total=5.0,
-            seed=seed,
-            device="cuda"
-        )
-
-        audio_path = args.output_dir / f"{args.prompt.replace(' ', '_')}/{seed}.wav"
+        audio_path = args.output_dir / f"{args.prompt.replace(' ', '_')}/{args.seed}_{i}.wav"
         audio_path.parent.mkdir(parents=True, exist_ok=True)
-        torchaudio.save(audio_path, audio, model_config["sample_rate"])
+        torchaudio.save(audio_path, audio[i], model_config["sample_rate"])
 
 if __name__ == "__main__":
     args = parse_args()
