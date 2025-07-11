@@ -1,3 +1,5 @@
+datasets/
+prev_output/
 logs/
 .vscode
 wandb

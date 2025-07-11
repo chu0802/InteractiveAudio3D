@@ -42,7 +42,6 @@ class QwenAPI:
         completion = self.client.chat.completions.create(
             model=self.model,
             messages=messages,
-            modalities=["text"],
             stream=True,
             **kwargs,
         )
@@ -98,7 +97,7 @@ def compose_messages(audio_path=None, image_path=None, text=None, role="user"):
     return messages
 
 if __name__ == "__main__":
-    audio_path = "/home/chuyu/vllab/interactive_audio_3d/output/0118_bathroom/000/dropping_Dial_hand_soap/1106.wav"
+    audio_path = "output/0118_bathroom/000/dropping_Dial_hand_soap/1106.wav"
     
     naive_text_prompt = "Given an audio clip of a sound, identify what kind of action likely caused the sound, the object involved, and infer the object's possible materials and physical properties. List several potential actions, the object involved, and the object’s likely material and physical properties in the following json format: ```json{\"action\": [\"action1\", \"action2\", \"action3\", ...], \"object\": [\"object1\", ...], \"material\": [\"material1\", ...], \"physical_properties\": [\"physical_property1\", ...]}```"
 
