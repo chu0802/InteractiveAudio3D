@@ -69,7 +69,7 @@ def generate(
     audio = generate_diffusion_cond(**generate_args)
     audio = audio[:,:,:int(seconds_total*sample_rate)]
     # audio = rearrange(audio, "b d n -> d (b n)")
-    audio = audio.to(torch.float32).div(torch.max(torch.abs(audio))).clamp(-1, 1).mul(32767).to(torch.int16).cpu()    
+    audio = audio.to(torch.float32).div(torch.max(torch.abs(audio))).clamp(-1, 1).mul(32767).to(torch.int16).cpu()
 
     return audio
 
