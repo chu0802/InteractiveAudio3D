@@ -2,8 +2,8 @@
     "dataset_type": "audio_dir",
     "datasets": [
         {
-            "id": "drop",
-            "path": "output/picking_up_and_then_dropping_a_plastic_bottle_cap_onto_a_hard_surface_such_as_a_countertop_or_table.",
+            "id": "ceramic_mug",
+            "path": "positive_samples/ceramic_mug",
             "custom_metadata_module": "src/stable_audio/custom_metadata.py"
         }
     ],

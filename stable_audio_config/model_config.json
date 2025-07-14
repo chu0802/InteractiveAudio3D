@@ -146,10 +146,20 @@
         "demo": {
             "demo_every": 50,
             "demo_steps": 100,
-            "num_demos": 1,
+            "num_demos": 3,
             "demo_cond": [
                 {
-                    "prompt": "picking up and then dropping a plastic bottle cap onto a hard surface such as a countertop or table.",
+                    "prompt": "Filling the ceramic mug",
+                    "seconds_start": 0,
+                    "seconds_total": 5
+                },
+                {
+                    "prompt": "Knocking the ceramic mug",
+                    "seconds_start": 0,
+                    "seconds_total": 5
+                },
+                {
+                    "prompt": "Tapping the ceramic mug",
                     "seconds_start": 0,
                     "seconds_total": 5
                 }
