@@ -132,7 +132,7 @@ def main():
         callbacks=callbacks,
         logger=wandb_logger,
         log_every_n_steps=10,
-        max_epochs=10,
+        max_epochs=300,
         default_root_dir=args.save_dir,
         gradient_clip_val=args.gradient_clip_val,
         reload_dataloaders_every_n_epochs = 0,

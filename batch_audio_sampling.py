@@ -15,9 +15,9 @@ def parse_args():
     parser.add_argument("-c", "--scene_name", type=str, default="0118_bathroom")
     parser.add_argument("-s", "--seed", type=int, default=1102)
     parser.add_argument("-o", "--output_dir", type=Path, default=Path("output"))
-    
+    parser.add_argument("-t", "--target_obj", type=str, default=None)
     parser.add_argument("-n", "--num_samples", type=int, default=10)
-    parser.add_argument("-m", "--model_config", type=Path, default=None)
+    parser.add_argument("-m", "--model_config", type=Path, default="stable_audio_config/model_config.json")
     parser.add_argument("-l", "--lora_ckpt_path", type=Path, default=None)
     parser.add_argument("-b", "--batch_size", type=int, default=16)
     return parser.parse_args()
@@ -47,6 +47,8 @@ def main(args):
 
     info_list = []
     for object_name, object_info in info.items():
+        if args.target_obj and object_name != args.target_obj:
+            continue
         for description in object_info["descriptions"]:
             info_list.append({"obj_name": object_name, "description": description, "prompt": f"{description}. High quality, realistic, and clear."})
 

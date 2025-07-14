@@ -1,3 +1,6 @@
+*.wav
+bad_samples
+positive_samples/
 old_output/
 datasets/
 prev_output/
