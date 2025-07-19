@@ -11,16 +11,20 @@ def main(args):
 
     # clear the output directory
     if not args.statistics:
-        if args.output_dir.exists():
-            for sub_dir in args.output_dir.iterdir():
+        if (args.output_dir / args.scene_name).exists():
+            for sub_dir in (args.output_dir / args.scene_name).iterdir():
                 for file in sub_dir.iterdir():
                     if file.is_symlink():
                         file.unlink()
                 shutil.rmtree(sub_dir)
 
     for sub_dir in sorted(data_dir.iterdir()):
+        if args.target_obj and sub_dir.name.replace("_", " ") != args.target_obj:
+            continue
+
         print("-"*50)
         print("Object Name: ", sub_dir.name)
+
 
         with open(sub_dir / "rewards.json", "r") as f:
             data = json.load(f)
@@ -49,6 +53,7 @@ def main(args):
             
             print(f"max score: {max(overall_scores)}")
             print(f"min score: {min(overall_scores)}")
+            print(f"mean score: {np.mean(overall_scores)}")
             print(f"25th percentile: {np.percentile(overall_scores, 25)}")
             print(f"medium score: {np.percentile(overall_scores, 50)}")
             print(f"75th percentile: {np.percentile(overall_scores, 75)}")
@@ -71,8 +76,9 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--dataset_dir", type=Path, default=Path("output"))
     parser.add_argument("-n", "--scene_name", type=str, default="0118_bathroom")
     parser.add_argument("-o", "--output_dir", type=Path, default=Path("positive_samples"))
-    parser.add_argument("-f", "--filter_threshold", type=int, default=75)
+    parser.add_argument("-f", "--filter_threshold", type=int, default=95)
     parser.add_argument("-s", "--statistics", action="store_true", default=False)
     parser.add_argument("-m", "--mode", type=str, default="gt", choices=["gt", "lt"])
+    parser.add_argument("-t", "--target_obj", type=str, default=None)
     args = parser.parse_args()
     main(args)
