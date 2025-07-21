@@ -3,7 +3,7 @@
     "datasets": [
         {
             "id": "ceramic_mug",
-            "path": "positive_samples/ceramic_mug",
+            "path": "positive_samples_95/ceramic_mug",
             "custom_metadata_module": "src/stable_audio/custom_metadata.py"
         }
     ],
