@@ -39,19 +39,20 @@ def generate_jobs(info_list, num_samples, batch_size, seed=1102):
     return jobs
 
 def main(args):
-    with (args.dataset_dir / args.scene_name / "interaction_results.json").open("r") as f:
-        info = json.load(f)["objects"]
+    with (args.dataset_dir / args.scene_name / "hands_only_interaction_results.json").open("r") as f:
+        info = json.load(f)
     distributed_state = PartialState()
 
     model, model_config = load_model(args.model_config, args.lora_ckpt_path, device=distributed_state.device)
 
     info_list = []
-    for object_name, object_info in info.items():
+    for object_id, object_info in info.items():
+        object_name = object_info["object_name"]
         if args.target_obj and object_name != args.target_obj:
             continue
-        for description in object_info["descriptions"]:
+        for interaction in object_info["interactions"]:
+            description = interaction["description"]
             info_list.append({"obj_name": object_name, "description": description, "prompt": f"{description}. High quality, realistic, and clear."})
-
     jobs = generate_jobs(info_list, args.num_samples, args.batch_size, args.seed)
     overall_res = []
     with distributed_state.split_between_processes(jobs, apply_padding=True) as distributed_jobs:
