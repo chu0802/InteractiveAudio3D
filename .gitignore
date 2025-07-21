@@ -1,3 +1,7 @@
+lora_output_95_epoch_300
+lora_output_75
+environment_output
+rough_output
 *.wav
 bad_samples
 positive_samples/

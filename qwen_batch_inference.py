@@ -76,6 +76,9 @@ def main(args):
     processor = Qwen2_5OmniProcessor.from_pretrained("Qwen/Qwen2.5-Omni-7B")
     
     for audio_dir in sorted((args.audio_dir / args.scene_name).iterdir()):
+        if (args.target_object is not None) and (args.target_object != audio_dir.name):
+            continue
+
         audio_paths = [
             audio_path.as_posix()
             for audio_path in audio_dir.glob("*/*.wav")
@@ -88,15 +91,13 @@ def main(args):
         You are an expert audio‐forensics analyst with deep knowledge of acoustics, material science, and everyday physical interactions. You excel at rigorous, step-by-step reasoning and at extracting clean, valid JSON.  
         """
 
-        cot_stage_1_prompt = "Analyze the sound and reason through what may have caused it. For each sound, consider all plausible interpretations—what action might have produced it, what object was involved, and what materials the object likely had. Think through each possibility step by step. Use the following format for each possible explanation: Possibility 1: ```json{thinking_process: <thinking process>, description: 'The sound could be caused by <action> a <material> <object>.'}```, Possibility 2: ```json{...}```, ..."
-
-        cot_stage_2_prompt = "Given the audio input and the reasoning process below: {thinking_res}. For each possibility, extract the action, the object involved, as well as the involved object’s likely materials. Present your response in the following JSON format: ```json[{{action: [action1 (only the action, no other words), ...], object: [object1, ...], material: [material1, ...]}}, {{action: [action2, ...], object: [object2, ...], material: [material2, ...]}}, ...]```"
+        improved_cot_prompt = "Analyze the audio and reason through what may have caused it. All sounds are generated only through human hands interacting with objects — using parts like hands, fingertips, palms. Consider all plausible interpretations. For each plausible explanation, include: 1. A step-by-step thinking process. 2. A natural description sentence: \"The sound could be caused by <action> a <material> <object> with <part of the hand>\". 3. A structured attributes JSON: ```json{{\"action\": \"<only the verb>\",\"object\": \"<object>\",\"material\": \"<the material of the object>\",\"instrument\": \"<part of the hand>\"}}```. Output all possibilities in this format: ```json{{\"Possibility 1\": {{\"Thinking stage\": <step-by-step reasoning>, \"Description\": \"The sound could be caused by <action> a <material> <object> with <part of the hand>\", \"Attributes\": <structured attributes JSON>}}, \"Possibility 2\": ..., ...}}}```"
 
         preprocessed_batched_inputs = [
             preprocessing_fn(
                 processor, 
                 audio_paths=audio_paths, 
-                prompts=cot_stage_1_prompt, 
+                prompts=improved_cot_prompt, 
                 system_prompt=system_prompt,
             ) 
             for audio_paths in batchify_inputs(audio_paths, args.batch_size)
@@ -126,48 +127,16 @@ def main(args):
         thinking_res = stage_1_gather[: len(audio_paths)]
 
         if distributed_state.is_main_process:
-            with open(audio_dir / "stage_1_results.json", "w") as f:
+            with open(audio_dir / "improved_stage_1_results.json", "w") as f:
                 json.dump([{"audio_path": a, "result": jsonify(t)} for t, a in zip(thinking_res, audio_paths)], f, indent=4)
-        
-        stage_2_prompts = [cot_stage_2_prompt.format(thinking_res=thinking_res[i]) for i in range(len(thinking_res))]
-        # stage 2
-        preprocessed_batched_inputs = [
-            preprocessing_fn(
-                processor, 
-                prompts=prompts, 
-                system_prompt=system_prompt,
-            ) 
-            for prompts in batchify_inputs(stage_2_prompts, args.batch_size)
-        ]
-        
-        stage_2_results = []
-        with distributed_state.split_between_processes(preprocessed_batched_inputs, apply_padding=True) as batched_prompts:
-            for batch in batched_prompts:
-                batch = batch.to(distributed_state.device)
-                output = model.generate(
-                    **batch, 
-                    use_audio_in_video=True,
-                    max_new_tokens=1024,
-                    eos_token_id=processor.tokenizer.eos_token_id,
-                    do_sample=True,
-                    return_dict_in_generate=True,
-                    temperature=0.7,
-                )
-                
-                text = processor.batch_decode(output.sequences[:, batch["input_ids"].shape[1] :], skip_special_tokens=True, clean_up_tokenization_spaces=False)
-                stage_2_results += text
-        stage_2_gather = gather_object(stage_2_results)
-        
-        stage_2_res = stage_2_gather[: len(stage_2_prompts)]
-        
-        if distributed_state.is_main_process:
-            with open(audio_dir / "stage_2_results.json", "w") as f:
-                json.dump([{"audio_path": a, "result": jsonify(t)} for t, a in zip(stage_2_res, audio_paths)], f, indent=4)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-a", "--audio_dir", type=Path, default=Path("output"))
     parser.add_argument("-s", "--scene_name", type=str, default="0118_bathroom")
     parser.add_argument("-b", "--batch_size", type=int, default=32)
+    parser.add_argument("-t", "--target_object", type=str, default=None)
     args = parser.parse_args()
+    
+    args.target_object = args.target_object.replace(" ", "_")
     main(args)
