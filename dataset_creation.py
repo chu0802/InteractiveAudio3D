@@ -93,8 +93,9 @@ if __name__ == "__main__":
     parser.add_argument("-m", "--mode", type=str, default="pos", choices=["pos", "neg"])
     parser.add_argument("-t", "--target_obj", type=str, default=None)
     parser.add_argument("-c", "--criterion", type=str, default="overall")
+    parser.add_argument("-i", "--iter", type=int, default=1)
     args = parser.parse_args()
     
-    args.output_dir = Path(f"{args.mode}_{args.criterion}_{args.filter_threshold}")
+    args.output_dir = Path(f"{args.mode}_{args.criterion}_{args.filter_threshold}_iter{args.iter}")
 
     main(args)
