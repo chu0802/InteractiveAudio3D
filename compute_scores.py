@@ -58,8 +58,8 @@ def main(args):
                 max_possibility = None
                 for i, possibility in enumerate(audio_res):
                     try:
-                        action = possibility.get("action", possibility.get("Action"))
-                        object = possibility.get("object", possibility.get("Object"))
+                        action = possibility.get("action", possibility["Action"])
+                        object = possibility.get("object", possibility["Object"])
                     except:
                         print("bad audio id possibility: ", audio_path_key, i)
                         continue
