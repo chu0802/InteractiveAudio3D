@@ -144,22 +144,12 @@
             }
         },
         "demo": {
-            "demo_every": 50,
-            "demo_steps": 100,
-            "num_demos": 3,
+            "demo_every": 50000,
+            "demo_steps": 50,
+            "num_demos": 1,
             "demo_cond": [
                 {
                     "prompt": "Filling the ceramic mug",
-                    "seconds_start": 0,
-                    "seconds_total": 5
-                },
-                {
-                    "prompt": "Knocking the ceramic mug",
-                    "seconds_start": 0,
-                    "seconds_total": 5
-                },
-                {
-                    "prompt": "Tapping the ceramic mug",
                     "seconds_start": 0,
                     "seconds_total": 5
                 }
@@ -174,8 +164,8 @@
         "multiplier": 1.0,
         "rank": 16,
         "alpha": 16,
-        "dropout": 0,
-        "module_dropout": 0,
+        "dropout": 0.1,
+        "module_dropout": 0.1,
         "lr": 1e-4
     }
 }

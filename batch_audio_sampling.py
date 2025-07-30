@@ -20,6 +20,7 @@ def parse_args():
     parser.add_argument("-m", "--model_config", type=Path, default="stable_audio_config/model_config.json")
     parser.add_argument("-l", "--lora_ckpt_path", type=Path, default=None)
     parser.add_argument("-b", "--batch_size", type=int, default=16)
+    parser.add_argument("-i", "--iter", type=int, default=0)
     return parser.parse_args()
 
 def generate_jobs(info_list, num_samples, batch_size, seed=1102):
@@ -48,7 +49,7 @@ def main(args):
     info_list = []
     for object_id, object_info in info.items():
         object_name = object_info["object_name"]
-        if args.target_obj and object_name != args.target_obj:
+        if args.target_obj and object_name.replace(" ", "_") != args.target_obj.replace(" ", "_"):
             continue
         for interaction in object_info["interactions"]:
             description = interaction["description"]
@@ -75,7 +76,8 @@ def main(args):
     if distributed_state.is_main_process:
         for res in overall_res:
             for i, audio in enumerate(res["audio"]):
-                audio_path = args.output_dir / args.scene_name / f"{res['obj_name'].replace(' ', '_')}/{res['description'].replace(' ', '_')}/{res['seed']}_{i}.wav"
+                output_dir = args.output_dir / args.scene_name / f"{res['obj_name'].replace(' ', '_')}" / f"iter{args.iter}"
+                audio_path = output_dir / f"{res['description'].replace(' ', '_')}/{res['seed']}_{i}.wav"
                 audio_path.parent.mkdir(parents=True, exist_ok=True)
                 torchaudio.save(audio_path, audio, model_config["sample_rate"])
 

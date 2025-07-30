@@ -76,8 +76,10 @@ def main(args):
     processor = Qwen2_5OmniProcessor.from_pretrained("Qwen/Qwen2.5-Omni-7B")
     
     for audio_dir in sorted((args.audio_dir / args.scene_name).iterdir()):
-        if (args.target_object is not None) and (args.target_object != audio_dir.name):
+        if (args.target_obj is not None) and (args.target_obj != audio_dir.name):
             continue
+            
+        audio_dir = audio_dir / f"iter{args.iter}"
 
         audio_paths = [
             audio_path.as_posix()
@@ -117,7 +119,7 @@ def main(args):
                     eos_token_id=processor.tokenizer.eos_token_id,
                     do_sample=True,
                     return_dict_in_generate=True,
-                    temperature=0.7,
+                    temperature=args.temperature,
                 )
                 
                 text = processor.batch_decode(output.sequences[:, batch["input_ids"].shape[1] :], skip_special_tokens=True, clean_up_tokenization_spaces=False)
@@ -132,11 +134,13 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-a", "--audio_dir", type=Path, default=Path("output"))
+    parser.add_argument("-a", "--audio_dir", type=Path, default=Path("logs/audios"))
     parser.add_argument("-s", "--scene_name", type=str, default="0118_bathroom")
     parser.add_argument("-b", "--batch_size", type=int, default=32)
-    parser.add_argument("-t", "--target_object", type=str, default=None)
+    parser.add_argument("-t", "--target_obj", type=str, default=None)
+    parser.add_argument("-c", "--temperature", type=float, default=0.7)
+    parser.add_argument("-i", "--iter", type=int, default=0)
     args = parser.parse_args()
     
-    args.target_object = args.target_object.replace(" ", "_")
+    args.target_obj = args.target_obj.replace(" ", "_")
     main(args)

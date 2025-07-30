@@ -28,8 +28,8 @@ def main(args):
     cnt = 0
     for img_id, obj_info in info.items():
         obj_name = obj_info["object_name"]
-        audio_dir = args.output_dir / args.scene_name / f"{obj_name.replace(' ', '_')}"
-        if args.target_obj and obj_name != args.target_obj:
+        audio_dir = args.output_dir / args.scene_name / f"{obj_name.replace(' ', '_')}" / f"iter{args.iter}"
+        if args.target_obj and obj_name.replace(" ", "_") != args.target_obj.replace(" ", "_"):
             continue
 
         with open(audio_dir / f"improved_stage_1_results.json", "r") as f:
@@ -101,9 +101,10 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-o", "--output_dir", type=Path, default=Path("output"))
+    parser.add_argument("-o", "--output_dir", type=Path, default=Path("logs/audios"))
     parser.add_argument("-d", "--dataset_dir", type=Path, default=Path("datasets"))
     parser.add_argument("-s", "--scene_name", type=str, default="0118_bathroom")
     parser.add_argument("-t", "--target_obj", type=str, default=None)
+    parser.add_argument("-i", "--iter", type=int, default=0)
     args = parser.parse_args()
     main(args)

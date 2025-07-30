@@ -17,29 +17,32 @@ def get_scores(obj, criterion):
         return CUSTOM_CRITERION[criterion](obj)
     else:
         raise ValueError(f"Criterion {criterion} not found")
-    
+
+def remove_dir(dir_path: Path):
+    for file in dir_path.iterdir():
+        if file.is_file():
+            file.unlink()
+        elif file.is_dir():
+            remove_dir(file)
+    dir_path.rmdir()
 
 def main(args):
     data_dir = args.dataset_dir / args.scene_name
 
-    # clear the output directory
-    if not args.statistics:
-        if (args.output_dir / args.scene_name).exists():
-            for sub_dir in (args.output_dir / args.scene_name).iterdir():
-                for file in sub_dir.iterdir():
-                    if file.is_symlink():
-                        file.unlink()
-                shutil.rmtree(sub_dir)
-
     for sub_dir in sorted(data_dir.iterdir()):
-        if args.target_obj and sub_dir.name.replace("_", " ") != args.target_obj:
+        if args.target_obj and sub_dir.name.replace(" ", "_") != args.target_obj:
             continue
-
+        
+        output_dir = Path(args.output_dir.as_posix().replace("<target_obj>", sub_dir.name.replace(" ", "_")))
+        
+        if not args.statistics and output_dir.exists():
+            remove_dir(output_dir)
+        
         print("-"*50)
         print("Object Name: ", sub_dir.name)
 
 
-        with open(sub_dir / "rewards.json", "r") as f:
+        with open(sub_dir / f"iter{args.iter-1}" / "rewards.json", "r") as f:
             data = json.load(f)
 
         catagorized_data = defaultdict(dict)
@@ -78,15 +81,15 @@ def main(args):
 
         if not args.statistics:
             for audio_path in filtered_data.keys():
-                audio_path_relative = Path(audio_path).relative_to(data_dir)
-                audio_path_output = args.output_dir / audio_path_relative
+                audio_path = Path(audio_path)
+                audio_path_output = output_dir / audio_path.parent.name / audio_path.name
                 audio_path_output.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy(audio_path, audio_path_output)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--dataset_dir", type=Path, default=Path("output"))
+    parser.add_argument("-d", "--dataset_dir", type=Path, default=Path("logs/audios"))
     parser.add_argument("-n", "--scene_name", type=str, default="0118_bathroom")
     parser.add_argument("-f", "--filter_threshold", type=int, default=95)
     parser.add_argument("-s", "--statistics", action="store_true", default=False)
@@ -94,8 +97,15 @@ if __name__ == "__main__":
     parser.add_argument("-t", "--target_obj", type=str, default=None)
     parser.add_argument("-c", "--criterion", type=str, default="overall")
     parser.add_argument("-i", "--iter", type=int, default=1)
+    parser.add_argument("-e", "--epoch", type=int, default=None)
     args = parser.parse_args()
     
-    args.output_dir = Path(f"{args.mode}_{args.criterion}_{args.filter_threshold}_iter{args.iter}")
+    args.target_obj = args.target_obj.replace(" ", "_") if args.target_obj else None
 
+    args.output_dir = Path(f"logs/datasets/{args.scene_name}/<target_obj>/iter{args.iter}/{args.mode}_{args.criterion}_{args.filter_threshold}")
+    
+    if args.iter > 1 and args.epoch is not None:
+        args.output_dir = Path(args.output_dir.as_posix() + f"_epoch{args.epoch}")
+
+    print(args)
     main(args)

@@ -15,7 +15,7 @@ from stable_audio_tools.training import create_training_wrapper_from_config, cre
 
 from .network import create_lora_from_config
 from .callbacks import LoRAModelCheckpoint, ReLoRAModelCheckpoint
-
+from datetime import datetime
 
 class ExceptionCallback(pl.Callback):
     def on_exception(self, trainer, module, err):
@@ -88,16 +88,19 @@ def main():
     # LORA: Prepare training
     if args.use_lora == 'true':
         lora.prepare_for_training(training_wrapper)
+    
+    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+    exp_id = f"{args.object_name}_{args.filter_threshold}_iter{args.iter}_epoch{args.max_epochs}"
 
-    wandb_logger = WandbLogger(project=args.name)
+    wandb_logger = WandbLogger(project=args.scene_name, id=timestamp)
     wandb_logger.watch(training_wrapper)
 
     callbacks = []
 
     callbacks.append(ExceptionCallback())
     
-    if args.save_dir and isinstance(wandb_logger.experiment.id, str):
-        checkpoint_dir = os.path.join(args.save_dir, wandb_logger.experiment.project, wandb_logger.experiment.id, "checkpoints") 
+    if args.save_dir:
+        checkpoint_dir = os.path.join(args.save_dir, "models", wandb_logger.experiment.project, exp_id) 
     else:
         checkpoint_dir = None
 
@@ -132,7 +135,7 @@ def main():
         callbacks=callbacks,
         logger=wandb_logger,
         log_every_n_steps=1,
-        max_epochs=300,
+        max_epochs=args.max_epochs,
         default_root_dir=args.save_dir,
         gradient_clip_val=args.gradient_clip_val,
         reload_dataloaders_every_n_epochs = 0,
