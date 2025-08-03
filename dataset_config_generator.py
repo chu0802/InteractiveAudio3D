@@ -40,5 +40,7 @@ if __name__ == "__main__":
     args.object_name = args.object_name.replace(" ", "_")
     config = generate_dataset_config(args)
     
-    with open(f"stable_audio_config/dataset_config.json", "w") as f:
+    config_path = Path("stable_audio_config") / args.scene_name / args.object_name / f"dataset_config.json"
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(config_path, "w") as f:
         json.dump(config, f, indent=4)
