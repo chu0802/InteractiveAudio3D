@@ -1,6 +1,7 @@
 import json
 import torch
 from transformers.models.qwen2_5_omni import Qwen2_5OmniThinkerForConditionalGeneration, Qwen2_5OmniProcessor
+from transformers import set_seed
 from qwen_omni_utils import process_mm_info
 from accelerate import PartialState
 from accelerate.utils import gather_object
@@ -120,6 +121,8 @@ def main(args):
                     do_sample=True,
                     return_dict_in_generate=True,
                     temperature=args.temperature,
+                    top_p=args.top_p,
+                    top_k=args.top_k,
                 )
                 
                 text = processor.batch_decode(output.sequences[:, batch["input_ids"].shape[1] :], skip_special_tokens=True, clean_up_tokenization_spaces=False)
@@ -129,7 +132,7 @@ def main(args):
         thinking_res = stage_1_gather[: len(audio_paths)]
 
         if distributed_state.is_main_process:
-            with open(audio_dir / "improved_stage_1_results.json", "w") as f:
+            with open(audio_dir / f"improved_stage_1_results_{args.temperature}_{args.top_p}_{args.top_k}_{args.random_seed}.json", "w") as f:
                 json.dump([{"audio_path": a, "result": jsonify(t)} for t, a in zip(thinking_res, audio_paths)], f, indent=4)
 
 if __name__ == "__main__":
@@ -139,8 +142,13 @@ if __name__ == "__main__":
     parser.add_argument("-b", "--batch_size", type=int, default=32)
     parser.add_argument("-t", "--target_obj", type=str, default=None)
     parser.add_argument("-c", "--temperature", type=float, default=0.7)
+    parser.add_argument("-p", "--top_p", type=float, default=1.0)
+    parser.add_argument("-k", "--top_k", type=int, default=50)
     parser.add_argument("-i", "--iter", type=int, default=0)
+    parser.add_argument("-r", "--random_seed", type=int, default=None)
     args = parser.parse_args()
     
     args.target_obj = args.target_obj.replace(" ", "_")
+    
+    set_seed(args.random_seed)
     main(args)

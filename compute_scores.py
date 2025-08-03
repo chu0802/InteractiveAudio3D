@@ -1,7 +1,5 @@
 import argparse
 from pathlib import Path
-from src.gptwrapper import GPTWrapper
-from pathlib import Path
 import json
 from sentence_transformers import SentenceTransformer
 import torch
@@ -32,7 +30,7 @@ def main(args):
         if args.target_obj and obj_name.replace(" ", "_") != args.target_obj.replace(" ", "_"):
             continue
 
-        with open(audio_dir / f"improved_stage_1_results.json", "r") as f:
+        with open(audio_dir / f"improved_stage_1_results_{args.temperature}_{args.top_p}_{args.top_k}_{args.random_seed}.json", "r") as f:
             audio_results = result_2_list_to_dict(json.load(f))
         
         rewards = {}
@@ -58,9 +56,12 @@ def main(args):
                 max_possibility = None
                 for i, possibility in enumerate(audio_res):
                     try:
-                        action = possibility.get("action", possibility["Action"])
-                        object = possibility.get("object", possibility["Object"])
+                        action = possibility.get("action", possibility.get("Action", None))
+                        object = possibility.get("object", possibility.get("Object", None))
                     except:
+                        print("bad audio id possibility: ", audio_path_key, i)
+                        continue
+                    if action is None or object is None:
                         print("bad audio id possibility: ", audio_path_key, i)
                         continue
 
@@ -96,7 +97,7 @@ def main(args):
                         "max_possibility": max_possibility,
                     }
 
-            with open(audio_dir / f"rewards.json", "w") as f:
+            with open(audio_dir / f"rewards{args.temperature}_{args.top_p}_{args.top_k}_{args.random_seed}.json", "w") as f:
                 json.dump(rewards, f, indent=4)
 
 if __name__ == "__main__":
@@ -106,5 +107,9 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--scene_name", type=str, default="0118_bathroom")
     parser.add_argument("-t", "--target_obj", type=str, default=None)
     parser.add_argument("-i", "--iter", type=int, default=0)
+    parser.add_argument("-c", "--temperature", type=float, default=0.7)
+    parser.add_argument("-p", "--top_p", type=float, default=1.0)
+    parser.add_argument("-k", "--top_k", type=int, default=50)
+    parser.add_argument("-r", "--random_seed", type=int, default=None)
     args = parser.parse_args()
     main(args)
