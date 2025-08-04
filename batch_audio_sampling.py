@@ -14,13 +14,14 @@ def parse_args():
     parser.add_argument("-d", "--dataset_dir", type=Path, default=Path("datasets"))
     parser.add_argument("-c", "--scene_name", type=str, default="0118_bathroom")
     parser.add_argument("-s", "--seed", type=int, default=1102)
-    parser.add_argument("-o", "--output_dir", type=Path, default=Path("output"))
+    parser.add_argument("-o", "--output_dir", type=Path, default=Path("logs/audios"))
     parser.add_argument("-t", "--target_obj", type=str, default=None)
     parser.add_argument("-n", "--num_samples", type=int, default=10)
     parser.add_argument("-m", "--model_config", type=Path, default="stable_audio_config/model_config.json")
     parser.add_argument("-l", "--lora_ckpt_path", type=Path, default=None)
     parser.add_argument("-b", "--batch_size", type=int, default=16)
     parser.add_argument("-i", "--iter", type=int, default=0)
+    parser.add_argument("--test", action="store_true")
     return parser.parse_args()
 
 def generate_jobs(info_list, num_samples, batch_size, seed=1102):
@@ -40,7 +41,8 @@ def generate_jobs(info_list, num_samples, batch_size, seed=1102):
     return jobs
 
 def main(args):
-    with (args.dataset_dir / args.scene_name / "hands_only_interaction_results.json").open("r") as f:
+    inference_name = "test_results.json" if args.test else "hands_only_interaction_results.json"
+    with (args.dataset_dir / args.scene_name / inference_name).open("r") as f:
         info = json.load(f)
     distributed_state = PartialState()
 
@@ -76,7 +78,8 @@ def main(args):
     if distributed_state.is_main_process:
         for res in overall_res:
             for i, audio in enumerate(res["audio"]):
-                output_dir = args.output_dir / args.scene_name / f"{res['obj_name'].replace(' ', '_')}" / f"iter{args.iter}"
+                output_dir = args.output_dir / "test" if args.test else args.output_dir
+                output_dir = output_dir / args.scene_name / f"{res['obj_name'].replace(' ', '_')}" / f"iter{args.iter}"
                 audio_path = output_dir / f"{res['description'].replace(' ', '_')}/{res['seed']}_{i}.wav"
                 audio_path.parent.mkdir(parents=True, exist_ok=True)
                 torchaudio.save(audio_path, audio, model_config["sample_rate"])
