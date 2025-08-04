@@ -30,7 +30,7 @@ def main(args):
         if args.target_obj and obj_name.replace(" ", "_") != args.target_obj.replace(" ", "_"):
             continue
 
-        with open(audio_dir / f"improved_stage_1_results_{args.temperature}_{args.top_p}_{args.top_k}_{args.random_seed}.json", "r") as f:
+        with open(audio_dir / f"improved_stage_1_results.json", "r") as f:
             audio_results = result_2_list_to_dict(json.load(f))
         
         rewards = {}
@@ -97,7 +97,7 @@ def main(args):
                         "max_possibility": max_possibility,
                     }
 
-            with open(audio_dir / f"rewards{args.temperature}_{args.top_p}_{args.top_k}_{args.random_seed}.json", "w") as f:
+            with open(audio_dir / f"rewards.json", "w") as f:
                 json.dump(rewards, f, indent=4)
 
 if __name__ == "__main__":
