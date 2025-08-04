@@ -94,7 +94,7 @@ def main(args):
         You are an expert audio‐forensics analyst with deep knowledge of acoustics, material science, and everyday physical interactions. You excel at rigorous, step-by-step reasoning and at extracting clean, valid JSON.  
         """
 
-        improved_cot_prompt = "Analyze the audio and reason through what may have caused it. All sounds are generated only through human hands interacting with objects — using parts like hands, fingertips, palms. Consider all plausible interpretations. For each plausible explanation, include: 1. A step-by-step thinking process. 2. A natural description sentence: \"The sound could be caused by <action> a <material> <object> with <part of the hand>\". 3. A structured attributes JSON: ```json{{\"action\": \"<only the verb>\",\"object\": \"<material> <object>\",\"instrument\": \"<part of the hand>\"}}```. Output all possibilities in this format: ```json{{\"Possibility 1\": {{\"Thinking stage\": <step-by-step reasoning>, \"Description\": \"The sound could be caused by <action> a <material> <object> with <part of the hand>\", \"Attributes\": <structured attributes JSON>}}, \"Possibility 2\": ..., ...}}}```"
+        improved_cot_prompt = "Analyze the audio and reason through what may have caused it. All sounds are generated only through human hands interacting with objects — using parts like hands, fingertips, palms. Consider all plausible interpretations. For each plausible explanation, include: 1. A step-by-step thinking process. 2. A natural description sentence: \"The sound could be caused by <action> a <material> <object> with <part of the hand>\". 3. A structured attributes JSON: ```json{{\"action\": \"<only the verb>\",\"object\": \"<material> <object>\",\"instrument\": \"<part of the hand>\"}}```. Output all possibilities in this format: ```json{{\"Possibility 1\": {{\"Thinking stage\": <step-by-step reasoning>, \"Description\": \"The sound could be caused by <action> a <material> <object> with <part of the hand>\", \"Attributes\": <structured attributes JSON>}}, \"Possibility 2\": {{...}}, ...}}}```"
 
         preprocessed_batched_inputs = [
             preprocessing_fn(
@@ -132,7 +132,7 @@ def main(args):
         thinking_res = stage_1_gather[: len(audio_paths)]
 
         if distributed_state.is_main_process:
-            with open(audio_dir / f"improved_stage_1_results_{args.temperature}_{args.top_p}_{args.top_k}_{args.random_seed}.json", "w") as f:
+            with open(audio_dir / f"improved_stage_1_results.json", "w") as f:
                 json.dump([{"audio_path": a, "result": jsonify(t)} for t, a in zip(thinking_res, audio_paths)], f, indent=4)
 
 if __name__ == "__main__":
