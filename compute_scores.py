@@ -21,7 +21,7 @@ def result_2_list_to_dict(result_list):
 def main(args):
     sentence_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2').to("cuda")
     
-    with open(args.dataset_dir / args.scene_name / "hands_only_interaction_results.json", "r") as f:
+    with open(args.dataset_dir / args.scene_name / "simplified_hands_only_interaction_results.json", "r") as f:
         info = json.load(f)
     cnt = 0
     for img_id, obj_info in info.items():

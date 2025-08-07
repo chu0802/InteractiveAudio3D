@@ -41,7 +41,7 @@ def generate_jobs(info_list, num_samples, batch_size, seed=1102):
     return jobs
 
 def main(args):
-    inference_name = "test_results.json" if args.test else "hands_only_interaction_results.json"
+    inference_name = "test_results.json" if args.test else "simplified_hands_only_interaction_results.json"
     with (args.dataset_dir / args.scene_name / inference_name).open("r") as f:
         info = json.load(f)
     distributed_state = PartialState()
