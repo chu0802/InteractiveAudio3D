@@ -4,6 +4,7 @@ from collections import defaultdict
 from itertools import product, combinations
 import numpy as np
 from compute_scores import result_2_list_to_dict
+import argparse
 
 # write a function to calculate pair-wise difference in a list
 def diff(x):
@@ -15,7 +16,11 @@ def diff(x):
     return total_diff / (len(x) * (len(x) - 1) / 2)
 
 if __name__ == "__main__":
-    dir = Path("logs/audios/0118_bathroom/ceramic_mug/iter0")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", "--iter", type=int, default=0)
+    args = parser.parse_args()
+    
+    dir = Path(f"logs/audios/0118_bathroom/ceramic_mug/iter{args.iter}")
     
     reward_files = list(dir.glob("rewards*.json"))
     qwen_files = list(dir.glob("improved_stage_1_results*.json"))
@@ -27,7 +32,7 @@ if __name__ == "__main__":
     all_rewards = {}
     num_possibility = {}
     for temp, top_p, top_k in product(*all_config_list[:-1]):
-        check_path = list(dir.glob(f"rewards{temp}_{top_p}_{top_k}*.json"))
+        check_path = list(dir.glob(f"rewards{temp}_{top_p}_{top_k}_*.json"))
         if len(check_path) == 0:
             continue
         
@@ -111,11 +116,10 @@ if __name__ == "__main__":
             
             n_poss += num_possibility[config][audio_name]
         # stats["total_diff"] = f"{total_diff:.2f}"
-        stats["avg_diff"] = f"{total_diff / total_has_diff:.4f}"
-        stats["std"] = f"{std:.4f}"
-        stats["max"] = f"{maxv:.4f}"
-        stats["min"] = f"{minv:.4f}"
-        stats["total_std"] = f"{np.std(total_scores):.4f}"
-        stats["total_avg"] = f"{np.mean(total_scores):.4f}"
+        stats["a_diff"] = f"{total_diff / total_has_diff if total_has_diff > 0 else 0:.4f}"
+        stats["max"] = f"{maxv:.2f}"
+        stats["min"] = f"{minv:.2f}"
+        stats["t_std"] = f"{np.std(total_scores):.4f}"
+        stats["t_avg"] = f"{np.mean(total_scores):.4f}"
         stats["n_poss"] = f"{np.mean(n_poss):.4f}"
         print(config, stats)
