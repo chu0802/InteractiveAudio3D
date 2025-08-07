@@ -27,6 +27,7 @@ def remove_dir(dir_path: Path):
     dir_path.rmdir()
 
 def main(args):
+    rng = np.random.default_rng(args.random_seed)
     data_dir = args.dataset_dir / args.scene_name
 
     for sub_dir in sorted(data_dir.iterdir()):
@@ -61,6 +62,9 @@ def main(args):
             else:
                 new_data = {k: v for k, v in action_data.items() if get_scores(v['scores'], args.criterion) <= filter_threshold}
 
+            if len(new_data) > args.max_samples:
+                new_data = dict(rng.choice(list(new_data.items()), size=args.max_samples, replace=False))
+                
             filtered_data.update(new_data)
 
 
@@ -98,6 +102,8 @@ if __name__ == "__main__":
     parser.add_argument("-c", "--criterion", type=str, default="overall")
     parser.add_argument("-i", "--iter", type=int, default=1)
     parser.add_argument("-e", "--epoch", type=int, default=None)
+    parser.add_argument("-r", "--random_seed", type=int, default=1102)
+    parser.add_argument("--max_samples", type=int, default=10)
     args = parser.parse_args()
     
     args.target_obj = args.target_obj.replace(" ", "_") if args.target_obj else None

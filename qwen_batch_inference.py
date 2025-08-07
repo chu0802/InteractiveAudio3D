@@ -141,14 +141,15 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--scene_name", type=str, default="0118_bathroom")
     parser.add_argument("-b", "--batch_size", type=int, default=32)
     parser.add_argument("-t", "--target_obj", type=str, default=None)
-    parser.add_argument("-c", "--temperature", type=float, default=0.7)
+    parser.add_argument("-c", "--temperature", type=float, default=1.0)
     parser.add_argument("-p", "--top_p", type=float, default=1.0)
-    parser.add_argument("-k", "--top_k", type=int, default=50)
+    parser.add_argument("-k", "--top_k", type=int, default=1)
     parser.add_argument("-i", "--iter", type=int, default=0)
     parser.add_argument("-r", "--random_seed", type=int, default=None)
     args = parser.parse_args()
     
-    args.target_obj = args.target_obj.replace(" ", "_")
+    if args.target_obj is not None:
+        args.target_obj = args.target_obj.replace(" ", "_")
     
     set_seed(args.random_seed)
     main(args)

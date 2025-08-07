@@ -100,7 +100,7 @@ def main():
     callbacks.append(ExceptionCallback())
     
     if args.save_dir:
-        checkpoint_dir = os.path.join(args.save_dir, "models", wandb_logger.experiment.project, exp_id) 
+        checkpoint_dir = os.path.join(args.save_dir, "models", args.scene_name, exp_id) 
     else:
         checkpoint_dir = None
 
