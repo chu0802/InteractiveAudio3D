@@ -17,11 +17,9 @@ def parse_logs(stat_key, target_dir, scale):
         r"25th percentile: (?P<p25>[\d\.]+)\n"
         r"medium score: (?P<median>[\d\.]+)\n"
         r"75th percentile: (?P<p75>[\d\.]+)\n"
-        r"95th percentile score: (?P<p95>[\d\.]+)"
     )
 
     log_paths = sorted(glob(f"{target_dir}/**/iter*/final_log.txt", recursive=True))
-
     stats_data = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
 
     for path in log_paths:
@@ -112,7 +110,7 @@ def main():
         else:
             output_dir = args.output_dir / "multi_obj"
     
-    for stat in ['mean', 'median', 'p25', 'p75', 'p95']:
+    for stat in ['mean', 'median', 'p25', 'p75']:
         if args.stat is None or args.stat == stat:
             # Collect aggregated data for all target directories
             aggregated_data_dict = {}
@@ -122,7 +120,6 @@ def main():
                 aggregated = aggregate_stats(stats_data, stat)
                 # Use a meaningful name for the legend
                 target_name = str(target_dir)
-                
                 aggregated_data_dict[target_name] = aggregated
             output_dir.mkdir(parents=True, exist_ok=True)
             plot_stats(aggregated_data_dict, stat, f'{output_dir}/stat_trend_{stat}.pdf')
