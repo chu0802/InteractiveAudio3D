@@ -57,7 +57,7 @@ def main(args):
                 for i, possibility in enumerate(audio_res):
                     try:
                         action = possibility.get("action", possibility.get("Action", None))
-                        object = possibility.get("object", possibility.get("Object", None))
+                        object = possibility.get("material & object name", None)
                     except:
                         print("bad audio id possibility: ", audio_path_key, i)
                         continue
@@ -91,7 +91,7 @@ def main(args):
                     rewards[audio_path_key] = {
                         "scores": {
                             "action": max_action_score,
-                            "object": max_object_score,
+                            "material & object name": max_object_score,
                             "overall": max_overall_score
                         },
                         "max_possibility": max_possibility,
@@ -107,9 +107,9 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--scene_name", type=str, default="0118_bathroom")
     parser.add_argument("-t", "--target_obj", type=str, default=None)
     parser.add_argument("-i", "--iter", type=int, default=0)
-    parser.add_argument("-c", "--temperature", type=float, default=0.7)
+    parser.add_argument("-c", "--temperature", type=float, default=1.0)
     parser.add_argument("-p", "--top_p", type=float, default=1.0)
-    parser.add_argument("-k", "--top_k", type=int, default=50)
+    parser.add_argument("-k", "--top_k", type=int, default=1)
     parser.add_argument("-r", "--random_seed", type=int, default=None)
     args = parser.parse_args()
     main(args)

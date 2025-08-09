@@ -20,7 +20,7 @@ if __name__ == "__main__":
     parser.add_argument("-i", "--iter", type=int, default=0)
     args = parser.parse_args()
     
-    dir = Path(f"logs/audios/0118_bathroom/ceramic_mug/iter{args.iter}")
+    dir = Path(f"logs/audios/0118_bathroom/metal_faucet_handle/iter0")
     
     reward_files = list(dir.glob("rewards*.json"))
     qwen_files = list(dir.glob("improved_stage_1_results*.json"))
