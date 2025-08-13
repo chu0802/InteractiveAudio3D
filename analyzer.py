@@ -18,9 +18,11 @@ def diff(x):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--iter", type=int, default=0)
+    parser.add_argument("-t", "--target_dir", type=str, required=True)
+    parser.add_argument("-f", "--filter_word", type=str, default=None)
     args = parser.parse_args()
     
-    dir = Path(f"logs/audios/0118_bathroom/metal_faucet_handle/iter0")
+    dir = Path(args.target_dir)
     
     reward_files = list(dir.glob("rewards*.json"))
     qwen_files = list(dir.glob("improved_stage_1_results*.json"))
@@ -42,6 +44,9 @@ if __name__ == "__main__":
             reward_path = dir / f"rewards{temp}_{top_p}_{top_k}_{seed}.json"
             qwen_path = dir / f"improved_stage_1_results_{temp}_{top_p}_{top_k}_{seed}.json"
             
+            if not reward_path.exists() or not qwen_path.exists():
+                continue
+            
             with open(reward_path, "r") as f:
                 reward_data = json.load(f)
             
@@ -51,6 +56,8 @@ if __name__ == "__main__":
             qwen_res = result_2_list_to_dict(qwen_data)
 
             for audio_info in qwen_data:
+                if args.filter_word is not None and args.filter_word not in audio_info["audio_path"]:
+                    continue
                 audio_path = Path(audio_info["audio_path"])
                 audio_res = qwen_res[audio_path.as_posix()]
                 if audio_res is None:
