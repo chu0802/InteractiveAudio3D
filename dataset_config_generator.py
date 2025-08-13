@@ -11,7 +11,7 @@ DATASET_CONFIG_TEMPLATE = {
 def generate_dataset_config(args):
     dataset_config = DATASET_CONFIG_TEMPLATE.copy()
 
-    dir_name = f"pos_overall_{args.filter_threshold}"
+    dir_name = f"pos_smoothed_{args.filter_threshold}"
     if args.iter > 1 and args.epoch is not None:
         dir_name += f"_epoch{args.epoch}"
 
@@ -20,9 +20,7 @@ def generate_dataset_config(args):
         "path": (
             Path("logs/datasets") /
             args.scene_name /
-            args.object_name /
-            f"iter{args.iter}" /
-            dir_name
+            args.object_name
         ).as_posix(),
         "custom_metadata_module": "src/stable_audio/custom_metadata.py",
     })

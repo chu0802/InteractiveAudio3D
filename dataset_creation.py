@@ -43,7 +43,7 @@ def main(args):
         print("Object Name: ", sub_dir.name)
 
 
-        with open(sub_dir / f"iter{args.iter-1}" / "rewards.json", "r") as f:
+        with open(sub_dir / f"iter{args.iter-1}" / "smoothed_rewards.json", "r") as f:
             data = json.load(f)
 
         catagorized_data = defaultdict(dict)
@@ -99,11 +99,11 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--statistics", action="store_true", default=False)
     parser.add_argument("-m", "--mode", type=str, default="pos", choices=["pos", "neg"])
     parser.add_argument("-t", "--target_obj", type=str, default=None)
-    parser.add_argument("-c", "--criterion", type=str, default="overall")
+    parser.add_argument("-c", "--criterion", type=str, default="smoothed")
     parser.add_argument("-i", "--iter", type=int, default=1)
     parser.add_argument("-e", "--epoch", type=int, default=None)
     parser.add_argument("-r", "--random_seed", type=int, default=1102)
-    parser.add_argument("--max_samples", type=int, default=10)
+    parser.add_argument("--max_samples", type=int, default=100)
     args = parser.parse_args()
     
     args.target_obj = args.target_obj.replace(" ", "_") if args.target_obj else None
