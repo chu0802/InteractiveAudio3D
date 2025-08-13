@@ -7,6 +7,7 @@ from accelerate import PartialState
 from accelerate.utils import gather_object
 import argparse
 from pathlib import Path
+from tqdm.auto import tqdm
 
 def prepare_prompt(audio=None, text=None, system_prompt=None):
     msgs = []
@@ -98,16 +99,18 @@ def main(args):
 
         # improved_cot_prompt = "Analyze the audio and reason through what may have caused it. All sounds are generated only through human hands interacting with objects — using parts like hands, fingertips, palms. Consider all plausible interpretations. For each plausible explanation, include: 1. A step-by-step thinking process. 2. A natural description sentence: \"The sound could be caused by <action> a <material> <object> with <part of the hand>\". 3. A structured attributes JSON: ```json{{\"action\": \"<only the verb>\",\"object\": \"<material> <object>\",\"instrument\": \"<part of the hand>\"}}```. Output all possibilities in this format: ```json{{\"Possibility 1\": {{\"Thinking stage\": <step-by-step reasoning>, \"Description\": \"The sound could be caused by <action> a <material> <object> with <part of the hand>\", \"Attributes\": <structured attributes JSON>}}, \"Possibility 2\": {{...}}, ...}}}```"
 
-        preprocessed_batched_inputs = [
-            preprocessing_fn(
-                processor, 
-                audio_paths=audio_paths, 
-                prompts=improved_cot_prompt, 
-                system_prompt=system_prompt,
-            ) 
-            for audio_paths in batchify_inputs(audio_paths, args.batch_size)
-        ]
-        
+        preprocessed_batched_inputs = []
+        batch_data = batchify_inputs(audio_paths, args.batch_size)
+        for audio_path in tqdm(batch_data, total=len(batch_data), disable=not distributed_state.is_main_process):
+            preprocessed_batched_inputs.append(
+                preprocessing_fn(
+                    processor, 
+                    audio_paths=audio_path, 
+                    prompts=improved_cot_prompt, 
+                    system_prompt=system_prompt,
+                )
+            )
+
         stage_1_results = []
         
         # stage 1
